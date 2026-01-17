@@ -120,10 +120,10 @@
         </dependency>
 
         <!-- ParameterObject-->
-<!--        <dependency>-->
-<!--            <groupId>org.springdoc</groupId>-->
-<!--            <artifactId>springdoc-openapi-ui</artifactId>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springdoc</groupId>-->
+        <!--            <artifactId>springdoc-openapi-ui</artifactId>-->
+        <!--        </dependency>-->
 
     </dependencies>
 
@@ -132,22 +132,30 @@
         <finalName>main-service</finalName>
         <plugins>
             <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.1.0</version>
                 <executions>
                     <execution>
-                        <id>copy-jar-to-parent</id>
+                        <id>copy-jar-to-main-service-target</id>
                         <phase>package</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.parent.basedir}/target"/>
-                                <copy file="${project.build.directory}/${project.build.finalName}.jar"
-                                      tofile="${project.parent.basedir}/target/main-service.jar"
-                                      overwrite="true"/>
+                                <!-- реальная папка -->
+                                <mkdir dir="${project.basedir}/../target"/>
+
+                                <copy
+                                        file="${project.build.directory}/${project.build.finalName}.jar"
+                                        tofile="${project.basedir}/../target/main-service.jar"
+                                        overwrite="true"/>
                             </target>
                         </configuration>
                     </execution>
