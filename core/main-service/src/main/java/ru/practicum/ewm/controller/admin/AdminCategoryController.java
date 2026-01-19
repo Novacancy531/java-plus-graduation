@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.ewm.core.exception.ConflictException;
-import ru.practicum.ewm.dto.category.CategoryDto;
+import ru.practicum.dto.category.CategoryDto;
 import ru.practicum.ewm.service.CategoryService;
+import ru.practicum.exception.ConflictException;
 
 @RestController
 @RequestMapping(path = "/admin/categories")

@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
-import ru.practicum.ewm.core.exception.ConflictException;
-import ru.practicum.ewm.core.exception.NotFoundException;
-import ru.practicum.ewm.dto.user.UserDto;
+import ru.practicum.dto.user.UserDto;
 import ru.practicum.ewm.mapper.UserMapper;
 import ru.practicum.ewm.model.User;
 import ru.practicum.ewm.repository.UserRepository;
+import ru.practicum.exception.ConflictException;
+import ru.practicum.exception.NotFoundException;
 
 import java.util.List;
 import java.util.Optional;

@@ -6,8 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import ru.practicum.ewm.core.annotation.DateRange;
-import ru.practicum.ewm.core.annotation.DateRangeAware;
+import ru.practicum.annotation.DateRange;
+import ru.practicum.annotation.DateRangeAware;
 
 import java.time.LocalDateTime;
 import java.util.List;

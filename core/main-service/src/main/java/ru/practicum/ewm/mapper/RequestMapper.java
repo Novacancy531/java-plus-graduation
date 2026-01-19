@@ -4,7 +4,7 @@ import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import ru.practicum.ewm.core.config.CommonMapperConfiguration;
-import ru.practicum.ewm.dto.request.ParticipationRequestDto;
+import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.ewm.model.Request;
 
 @Mapper(config = CommonMapperConfiguration.class)

@@ -16,7 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ru.practicum.ewm.constant.RequestStatus;
+import ru.practicum.constant.RequestStatus;
 
 import java.time.LocalDateTime;
 

@@ -2,7 +2,7 @@ package ru.practicum.ewm.service;
 
 import com.querydsl.core.BooleanBuilder;
 import org.springframework.util.StringUtils;
-import ru.practicum.ewm.constant.EventState;
+import ru.practicum.constant.EventState;
 import ru.practicum.ewm.filter.EventsFilter;
 import ru.practicum.ewm.model.QEvent;
 

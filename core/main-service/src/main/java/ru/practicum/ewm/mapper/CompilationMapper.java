@@ -6,8 +6,8 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import ru.practicum.ewm.core.config.CommonMapperConfiguration;
-import ru.practicum.ewm.dto.compilation.CompilationFullDto;
-import ru.practicum.ewm.dto.compilation.CompilationUpdateDto;
+import ru.practicum.dto.compilation.CompilationFullDto;
+import ru.practicum.dto.compilation.CompilationUpdateDto;
 import ru.practicum.ewm.model.Compilation;
 import ru.practicum.ewm.model.Event;
 
