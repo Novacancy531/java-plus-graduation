@@ -9,12 +9,6 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>core</artifactId>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>main-service</module>
-        <module>stats</module>
-        <module>user-service</module>
-    </modules>
+    <artifactId>common</artifactId>
+    <packaging>POM</packaging>
 </project>
