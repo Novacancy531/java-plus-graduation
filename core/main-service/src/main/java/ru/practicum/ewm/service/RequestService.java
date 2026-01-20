@@ -4,18 +4,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.api.UserServiceApi;
 import ru.practicum.constant.EventState;
 import ru.practicum.constant.RequestStatus;
 import ru.practicum.dto.request.EventRequestStatusUpdateRequest;
 import ru.practicum.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.dto.request.ParticipationRequestDto;
+import ru.practicum.dto.user.UserDto;
 import ru.practicum.ewm.mapper.RequestMapper;
 import ru.practicum.ewm.model.Event;
 import ru.practicum.ewm.model.Request;
-import ru.practicum.ewm.model.User;
 import ru.practicum.ewm.repository.EventRepository;
 import ru.practicum.ewm.repository.RequestRepository;
-import ru.practicum.ewm.repository.UserRepository;
 import ru.practicum.exception.ConditionsException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RequestService {
 
-    private final UserRepository userRepository;
+    private final UserServiceApi userService;
     private final EventRepository eventRepository;
 
     private final RequestRepository repository;
@@ -45,12 +45,12 @@ public class RequestService {
             throw new ConflictException("Запрос уже существует");
         }
 
-        User requester = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
+        UserDto requester = userService.find(new ArrayList<>(List.of(userId)),0, 10).getFirst();
+
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Мероприятие с id=" + eventId + " не найдено"));
 
-        if (Objects.equals(event.getInitiator().getId(), userId)) {
+        if (Objects.equals(event.getInitiator(), userId)) {
             throw new ConflictException("Нельзя подать заявку на своё мероприятие");
         }
 
@@ -69,7 +69,7 @@ public class RequestService {
         Request request = Request.builder()
                 .created(LocalDateTime.now())
                 .event(event)
-                .requester(requester)
+                .requesterId(requester.getId())
                 .status(RequestStatus.PENDING)
                 .build();
 
@@ -77,9 +77,7 @@ public class RequestService {
         if (!moderation || event.getParticipantLimit() == 0) {
             request.setStatus(RequestStatus.CONFIRMED);
         }
-//        if (moderation != null && !moderation) {
-//            request.setStatus(RequestStatus.CONFIRMED);
-//        }
+
         request = repository.save(request);
         log.info("Создан запрос, id = {}", request.getId());
         return mapper.toDto(request);
@@ -88,7 +86,7 @@ public class RequestService {
 
     @Transactional(readOnly = true)
     public List<ParticipationRequestDto> getRequestsByUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
+        if (!userService.existsById(userId)) {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
         return repository.findByRequesterId(userId).stream()
@@ -101,7 +99,7 @@ public class RequestService {
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) throws ConditionsException {
         Request request = repository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("Заявка не найдена"));
-        if (!Objects.equals(request.getRequester().getId(), userId)) {
+        if (!Objects.equals(request.getRequesterId(), userId)) {
             throw new ConditionsException("Только владелец может отменить заявку");
         }
         request.setStatus(RequestStatus.CANCELED);
@@ -115,7 +113,7 @@ public class RequestService {
     public List<ParticipationRequestDto> getRequestsForEventOwner(Long ownerId, Long eventId) throws ConditionsException {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Мероприятие с id=" + eventId + " не найдено"));
-        if (!Objects.equals(event.getInitiator().getId(), ownerId)) {
+        if (!Objects.equals(event.getInitiator(), ownerId)) {
             throw new ConditionsException("Только владелец мероприятия может просматривать запросы на это мероприятие");
         }
         return repository.findByEventId(eventId).stream()
@@ -132,7 +130,7 @@ public class RequestService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Мероприятие с id=" + eventId + " не найдено"));
 
-        if (!Objects.equals(event.getInitiator().getId(), ownerId)) {
+        if (!Objects.equals(event.getInitiator(), ownerId)) {
             throw new ConditionsException("Только владелец мероприятия может изменять статус запроса");
         }
 

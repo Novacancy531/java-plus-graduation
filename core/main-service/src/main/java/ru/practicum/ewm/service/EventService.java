@@ -19,6 +19,8 @@ import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventNewDto;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.dto.event.EventUpdateDto;
+import ru.practicum.dto.user.UserDto;
+import ru.practicum.ewm.client.UserServiceClient;
 import ru.practicum.exception.ConditionsException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
@@ -28,13 +30,12 @@ import ru.practicum.ewm.mapper.EventMapperDep;
 import ru.practicum.ewm.model.Category;
 import ru.practicum.ewm.model.Event;
 import ru.practicum.ewm.model.Location;
-import ru.practicum.ewm.model.User;
 import ru.practicum.ewm.repository.CategoryRepository;
 import ru.practicum.ewm.repository.EventRepository;
 import ru.practicum.ewm.repository.RequestRepository;
-import ru.practicum.ewm.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class EventService {
     private final EventMapper mapper;
 
 
-    private final UserRepository userRepository;
+    private final UserServiceClient userServiceClient;
     private final LocationService locationService;
 
     private final CategoryRepository categoryRepository;
@@ -60,11 +61,11 @@ public class EventService {
 
     @Transactional
     public EventFullDto create(@Valid EventNewDto dto, Long userId) throws ConditionsException {
-        User user = getUserOrThrow(userId);
+        UserDto userDto = getUserOrThrow(userId);
         Category category = getCategoryOrThrow(dto.getCategory());
         Location location = locationService.getOrCreateLocation(dto.getLocation());
 
-        Event event = mapper.toEntityWithNewDto(dto, user, category, location);
+        Event event = mapper.toEntityWithNewDto(dto, userDto.getId(), category, location);
         event = event.toBuilder().createdOn(LocalDateTime.now()).build();
         event = repository.save(event);
         log.info("Создано событие с id = {}", event.getId());
@@ -100,7 +101,7 @@ public class EventService {
         return mapper.toDto(event).toBuilder()
                 .confirmedRequests(calcConfirmedRequests)
                 .views(calcView)
-                .build();
+                 .build();
     }
 
     @Transactional
@@ -194,7 +195,7 @@ public class EventService {
             throw new NotFoundException("Пользователь не найден");
         }
 
-        return repository.findAllByInitiatorId(userId, pageable)
+        return repository.findAllByinitiator(userId, pageable)
                 .stream()
                 .map(event -> EventMapperDep.eventToShortDto(
                         event,
@@ -274,9 +275,8 @@ public class EventService {
         return result;
     }
 
-    private User getUserOrThrow(Long userId) throws ConditionsException {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new ConditionsException("Пользователь с id=" + userId + " не найден"));
+    private UserDto getUserOrThrow(Long userId) throws ConditionsException {
+        return userServiceClient.find(new ArrayList<>(List.of(userId)),0, 10).getFirst();
     }
 
     private Category getCategoryOrThrow(Long catId) throws ConditionsException {
@@ -291,7 +291,7 @@ public class EventService {
 
     private Event getEventOrThrow(Long eventId, Long userId) throws ConditionsException {
         Event event = getEventOrThrow(eventId);
-        if (!event.getInitiator().getId().equals(userId)) {
+        if (!event.getInitiator().equals(userId)) {
             throw new ConditionsException("Пользователь не является инициатором события");
         }
         return event;
@@ -311,7 +311,7 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public boolean userIsExist(Long userId) {
-        return userRepository.existsById(userId);
+        return userServiceClient.existsById(userId);
     }
 
     private void validateEventDate(LocalDateTime newDate, EventStateAction action, EventState currentState, Event event) throws ConditionsException {

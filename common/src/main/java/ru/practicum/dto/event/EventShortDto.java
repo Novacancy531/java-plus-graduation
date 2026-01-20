@@ -24,7 +24,7 @@ public class EventShortDto {
 
     private LocalDateTime eventDate;
 
-    private UserDto initiator;
+    private Long initiator;
 
     private Boolean paid;
 

@@ -1,22 +1,22 @@
-package ru.practicum.ewm.service;
+package ru.practicum.domain.service;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
+import ru.practicum.dal.entity.User;
+import ru.practicum.dal.repository.UserRepository;
 import ru.practicum.dto.user.UserDto;
-import ru.practicum.ewm.mapper.UserMapper;
-import ru.practicum.ewm.model.User;
-import ru.practicum.ewm.repository.UserRepository;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.mapper.UserMapper;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @Slf4j
@@ -29,12 +29,16 @@ public class UserService {
 
 
     @Transactional
-    public UserDto create(@Valid UserDto userDto) throws ConflictException {
+    public UserDto create(UserDto userDto) {
         log.info("Создать пользователя. email: {}", userDto.getEmail());
-        if (isEmailExistsAnotherUser(userDto)) {
-            throw new ConflictException("Адрес электронной почты уже используется");
+
+        User user;
+        try {
+            user = repository.save(User.newUser(userDto.getName(), userDto.getEmail()));
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException("Адрес электронной почты уже используется: " + ex.getMessage());
         }
-        User user = repository.save(mapper.toEntity(userDto));
+
         log.info("Создание пользователя OK, id = {}", user.getId());
         return mapper.toDto(user);
     }
@@ -60,14 +64,22 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Boolean isEmailExistsAnotherUser(UserDto userDto) {
-        return Optional.ofNullable(userDto.getId())
-                .map(id -> repository.existsByEmailAndIdNot(userDto.getEmail(), id))
-                .orElseGet(() -> repository.existsByEmail(userDto.getEmail()));
+    public List<UserDto> findUsers(List<Long> ids, int from, int size) {
+        int page = from / size;
+        Pageable pageable = PageRequest.of(page, size);
+
+        return findUsers(ids, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Boolean userIsExist(Long userId) {
+    public boolean userIsExist(Long userId) {
         return repository.existsById(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto findUser(Long userId) {
+        return mapper.toDto(repository.findById(userId).orElseThrow(()
+                -> new NotFoundException("Пользователь с id=" + userId + " не найден")));
+
     }
 }

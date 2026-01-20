@@ -6,15 +6,20 @@ spring:
       server:
         webflux:
           routes:
-            - id: stats
-              uri: lb://stats-server
-              predicates:
-                - Path=/hit,/stats
+                  - id: user-service
+                    uri: lb://user-service
+                    predicates:
+                      - Path=/admin/users/**
 
-            - id: main
-              uri: lb://main-service
-              predicates:
-                - Path=/admin/**,/categories/**,/compilations/**,/events/**,/users/**
+                  - id: stats
+                    uri: lb://stats-server
+                    predicates:
+                      - Path=/hit/**,/stats/**
+
+                  - id: main
+                    uri: lb://main-service
+                    predicates:
+                      - Path=/admin/**,/categories/**,/compilations/**,/events/**,/users/**
 
 logging:
   level:

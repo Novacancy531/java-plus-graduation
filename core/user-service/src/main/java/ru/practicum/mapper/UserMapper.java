@@ -1,10 +1,10 @@
-package ru.practicum.ewm.mapper;
+package ru.practicum.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import ru.practicum.ewm.core.config.CommonMapperConfiguration;
+import ru.practicum.config.CommonMapperConfiguration;
+import ru.practicum.dal.entity.User;
 import ru.practicum.dto.user.UserDto;
-import ru.practicum.ewm.model.User;
 
 @Mapper(config = CommonMapperConfiguration.class)
 public interface UserMapper {
@@ -13,7 +13,4 @@ public interface UserMapper {
 
     @Mapping(target = "email", ignore = true)
     UserDto toUserDtoShort(User entity);
-
-    User toEntity(UserDto dto);
-
 }

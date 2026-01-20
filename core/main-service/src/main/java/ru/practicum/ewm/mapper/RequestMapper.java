@@ -11,10 +11,10 @@ import ru.practicum.ewm.model.Request;
 public interface RequestMapper {
 
     @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "event", source = "entity.event.id")
-    @Mapping(target = "requester", source = "entity.requester.id")
-    @Mapping(target = "status", source = "entity.status")
-    @Mapping(target = "created", source = "entity.created")
-    @Mapping(target = "id", source = "entity.id")
+    @Mapping(target = "event", source = "event.id")
+    @Mapping(target = "requester", source = "requesterId")
+    @Mapping(target = "status", source = "status")
+    @Mapping(target = "created", source = "created")
+    @Mapping(target = "id", source = "id")
     ParticipationRequestDto toDto(Request entity);
 }

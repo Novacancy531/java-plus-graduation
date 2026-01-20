@@ -7,7 +7,7 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import ru.practicum.ewm.model.Event;
 
 public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPredicateExecutor<Event> {
-    Page<Event> findAllByInitiatorId(Long userId, Pageable page);
+    Page<Event> findAllByinitiator(Long userId, Pageable page);
 
     Boolean existsByCategoryId(Long categoryId);
 }

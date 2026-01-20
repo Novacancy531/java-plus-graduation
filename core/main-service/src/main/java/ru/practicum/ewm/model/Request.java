@@ -40,9 +40,7 @@ public class Request {
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requester_id", nullable = false)
-    private User requester;
+    private Long requesterId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

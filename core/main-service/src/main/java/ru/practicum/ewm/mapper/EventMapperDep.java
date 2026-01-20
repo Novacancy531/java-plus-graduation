@@ -7,9 +7,8 @@ import ru.practicum.ewm.model.Event;
 
 @UtilityClass
 public class EventMapperDep {
-    private final CategoryMapper categoryMapper = new CategoryMapperImpl();
 
-    private final UserMapper usermapper = new UserMapperImpl();
+    private final CategoryMapper categoryMapper = new CategoryMapperImpl();
     private final LocationMapper locationMapper = new LocationMapperImpl();
 
     public EventFullDto eventToFullDto(Event event, Long confirmedRequests, Long views) {
@@ -21,7 +20,7 @@ public class EventMapperDep {
                 .createdOn(event.getCreatedOn())
                 .description(event.getDescription())
                 .eventDate(event.getEventDate())
-                .initiator(usermapper.toUserDtoShort(event.getInitiator()))
+                .initiator(event.getInitiator())          // <-- Long
                 .location(locationMapper.toDto(event.getLocation()))
                 .paid(event.getPaid())
                 .participantLimit(event.getParticipantLimit())
@@ -40,11 +39,10 @@ public class EventMapperDep {
                 .category(categoryMapper.toDto(event.getCategory()))
                 .confirmedRequests(confirmedRequests)
                 .eventDate(event.getEventDate())
-                .initiator(usermapper.toUserDtoShort(event.getInitiator()))
+                .initiator(event.getInitiator())          // <-- Long
                 .paid(event.getPaid())
                 .title(event.getTitle())
                 .views(views)
                 .build();
     }
-
 }

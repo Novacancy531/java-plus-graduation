@@ -49,7 +49,7 @@ public class EventPredicateBuilder {
         }
 
         if (forAdmin && filter.getUsers() != null && !filter.getUsers().isEmpty()) {
-            predicate.and(event.initiator.id.in(filter.getUsers()));
+            predicate.and(event.initiator.in(filter.getUsers()));
         }
 
         if (forAdmin && filter.getStates() != null && !filter.getStates().isEmpty()) {

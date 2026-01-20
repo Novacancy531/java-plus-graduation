@@ -46,9 +46,7 @@ public class Event {
     @Column(nullable = false, length = 7000)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiator_id", nullable = false)
-    private User initiator;
+    private Long initiator;
 
     @Column(name = "event_date")
     private LocalDateTime eventDate;

@@ -35,6 +35,8 @@
         <querydsl.version>5.1.0</querydsl.version>
         <logbook.version>3.7.2</logbook.version>
         <springdoc.version>2.6.0</springdoc.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <lombok.version>1.18.32</lombok.version>
     </properties>
 
     <dependencyManagement>
@@ -78,20 +80,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct-processor</artifactId>
-                <version>${org.mapstruct.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok-mapstruct-binding</artifactId>
-                <version>${lombok-mapstruct-binding.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
                 <groupId>com.querydsl</groupId>
                 <artifactId>querydsl-jpa</artifactId>
                 <version>${querydsl.version}</version>
@@ -129,6 +117,37 @@
                         <systemPropertyVariables>
                             <spring.profiles.active>test</spring.profiles.active>
                         </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <compilerArgs>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
+
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${org.mapstruct.version}</version>
+                            </path>
+
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok-mapstruct-binding</artifactId>
+                                <version>${lombok-mapstruct-binding.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
 
@@ -289,5 +308,4 @@
             </build>
         </profile>
     </profiles>
-
 </project>
