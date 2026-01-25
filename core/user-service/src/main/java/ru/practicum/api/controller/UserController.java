@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.api.UserServiceApi;
+import ru.practicum.api.UserControllerApi;
 import ru.practicum.domain.service.UserService;
 import ru.practicum.dto.user.UserDto;
 
@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @Validated
 @RequiredArgsConstructor
-public class UserController implements UserServiceApi {
+public class UserController implements UserControllerApi {
 
     private final UserService service;
 
@@ -36,5 +36,12 @@ public class UserController implements UserServiceApi {
     public boolean existsById(Long id) {
         return service.userIsExist(id);
     }
+
+    @Override
+    public UserDto getUserById(long id) {
+        return service.getUserById(id);
+    }
+
+
 }
 

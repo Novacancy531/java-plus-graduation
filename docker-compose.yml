@@ -1,13 +1,13 @@
 services:
-  main-db:
+  event-service-db:
       image: postgres:16.1
-      container_name: main-db
+      container_name: event-service-db
       ports:
         - "5434:5432"
       environment:
         - POSTGRES_PASSWORD=100
         - POSTGRES_USER=admin
-        - POSTGRES_DB=main-db
+        - POSTGRES_DB=event-service-db
 
   stats-db:
     image: postgres:16.1
@@ -28,3 +28,13 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_USER=user
       - POSTGRES_DB=user-service-db
+
+  request-service-db:
+    image: postgres:16.1
+    container_name: request-service-db
+    ports:
+      - "5436:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=user
+      - POSTGRES_DB=request-service-db
