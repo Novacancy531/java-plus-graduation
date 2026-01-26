@@ -5,9 +5,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import ru.practicum.ewm.core.config.CommonMapperConfiguration;
+import ru.practicum.ewm.config.CommonMapperConfiguration;
 import ru.practicum.dto.category.CategoryDto;
-import ru.practicum.ewm.model.Category;
+import ru.practicum.ewm.dal.entity.Category;
 
 @Mapper(config = CommonMapperConfiguration.class)
 public interface CategoryMapper {

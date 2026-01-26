@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.constant.EventState;
 import ru.practicum.dto.category.CategoryDto;
-import ru.practicum.dto.user.UserDto;
 
 import java.time.LocalDateTime;
 
@@ -19,13 +18,9 @@ public class EventFullDto {
     private String annotation;
     private CategoryDto category;
     private Long confirmedRequests;
-
     private LocalDateTime createdOn;
-
     private String description;
-
     private LocalDateTime eventDate;
-
     private Long initiator;
     private EventLocationDto location;
     private Boolean paid;

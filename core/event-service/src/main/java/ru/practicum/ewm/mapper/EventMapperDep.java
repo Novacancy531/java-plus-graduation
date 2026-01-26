@@ -3,7 +3,7 @@ package ru.practicum.ewm.mapper;
 import lombok.experimental.UtilityClass;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventShortDto;
-import ru.practicum.ewm.model.Event;
+import ru.practicum.ewm.dal.entity.Event;
 
 @UtilityClass
 public class EventMapperDep {

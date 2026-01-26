@@ -6,13 +6,13 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import ru.practicum.constant.EventState;
-import ru.practicum.ewm.core.config.CommonMapperConfiguration;
+import ru.practicum.ewm.config.CommonMapperConfiguration;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventNewDto;
 import ru.practicum.dto.event.EventUpdateDto;
-import ru.practicum.ewm.model.Category;
-import ru.practicum.ewm.model.Event;
-import ru.practicum.ewm.model.Location;
+import ru.practicum.ewm.dal.entity.Category;
+import ru.practicum.ewm.dal.entity.Event;
+import ru.practicum.ewm.dal.entity.Location;
 
 @Mapper(config = CommonMapperConfiguration.class)
 public interface EventMapper {

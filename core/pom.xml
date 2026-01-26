@@ -17,5 +17,6 @@
         <module>stats</module>
         <module>user-service</module>
         <module>request-service</module>
+        <module>comment-service</module>
     </modules>
 </project>

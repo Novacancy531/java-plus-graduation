@@ -38,3 +38,14 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_USER=user
       - POSTGRES_DB=request-service-db
+
+  comment-service-db:
+    image: postgres:16.1
+    container_name: comment-service-db
+    ports:
+      - "5437:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=user
+      - POSTGRES_DB=comment-service-db
+

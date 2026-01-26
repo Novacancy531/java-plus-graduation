@@ -16,6 +16,11 @@ spring:
                     predicates:
                       - Path=/users/*/requests/**,/requests/**,/users/*/events/*/requests/**
 
+                  - id: comment-service.yaml
+                    uri: lb://comment-service
+                    predicates:
+                      - Path=/comments/**
+
                   - id: event-service
                     uri: lb://event-service
                     predicates:
