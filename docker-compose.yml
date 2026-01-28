@@ -1,39 +1,50 @@
 services:
-  common-db:
+  event-service-db:
     image: postgres:16.1
-    container_name: common-db
+    container_name: event-service-db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: postgres
-    volumes:
-      - common-db-data:/var/lib/postgresql/data
-      - ./init/common-db:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=event-service-db
 
   stats-db:
     image: postgres:16.1
     container_name: stats-db
     ports:
-      - "5433:5432"
+      - "5436:5432"
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 100
-      POSTGRES_DB: stats-db
-    volumes:
-      - stats-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d stats-db"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=stats-db
 
-volumes:
-  common-db-data:
-  stats-db-data:
+  user-service-db:
+    image: postgres:16.1
+    container_name: user-service-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=user-service-db
+
+  request-service-db:
+    image: postgres:16.1
+    container_name: request-service-db
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=request-service-db
+
+  comment-service-db:
+    image: postgres:16.1
+    container_name: comment-service-db
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=comment-service-db
