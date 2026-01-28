@@ -27,9 +27,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5436/stats-db
-    username: root
-    password: root
+    url: jdbc:postgresql://localhost:5432/stats-db
+    username: postgres
+    password: postgres
   jpa:
     hibernate:
       ddl-auto: none
