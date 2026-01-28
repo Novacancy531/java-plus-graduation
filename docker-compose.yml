@@ -5,14 +5,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 100
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
       POSTGRES_DB: postgres
     volumes:
       - common-db-data:/var/lib/postgresql/data
       - ./init/common-db:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U root -d postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
