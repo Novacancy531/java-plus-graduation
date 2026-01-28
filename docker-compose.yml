@@ -73,9 +73,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=user_db
-      - POSTGRES_USER=ewm
-      - POSTGRES_PASSWORD=ewm
+      POSTGRES_USER: ewm
+      POSTGRES_PASSWORD: ewm
     volumes:
       - ./volumes/postgres/user_data:/var/lib/postgresql/data/
     healthcheck:
