@@ -11,6 +11,7 @@ spring:
     username: ewm
     password: ewm
 
+
   jpa:
     hibernate:
       ddl-auto: none
