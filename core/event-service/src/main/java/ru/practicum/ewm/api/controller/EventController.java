@@ -30,5 +30,4 @@ public class EventController implements EventControllerApi {
     public EventFullDto getEventById(Long id) {
         return service.getEvent(id);
     }
-
 }

@@ -41,7 +41,4 @@ public class UserController implements UserControllerApi {
     public UserDto getUserById(long id) {
         return service.getUserById(id);
     }
-
-
 }
-

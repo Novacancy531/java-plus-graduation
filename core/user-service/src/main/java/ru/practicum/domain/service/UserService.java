@@ -80,7 +80,6 @@ public class UserService {
     public UserDto findUser(Long userId) {
         return mapper.toDto(repository.findById(userId).orElseThrow(()
                 -> new NotFoundException("Пользователь с id=" + userId + " не найден")));
-
     }
 
     @Transactional(readOnly = true)

@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.api.EventControllerApi;
-import ru.practicum.api.UserControllerApi;
+import ru.practicum.client.EventServiceFacade;
+import ru.practicum.client.UserServiceFacade;
 import ru.practicum.constant.EventState;
 import ru.practicum.constant.RequestStatus;
 import ru.practicum.dal.entity.Request;
@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RequestService {
 
-    private final UserControllerApi userService;
-    private final EventControllerApi eventService;
+    private final UserServiceFacade userServiceClient;
+    private final EventServiceFacade eventServiceClient;
     private final RequestRepository repository;
     private final RequestMapper mapper;
 
@@ -70,7 +70,7 @@ public class RequestService {
 
     @Transactional(readOnly = true)
     public List<ParticipationRequestDto> getRequestsByUser(Long userId) {
-        if (!userService.existsById(userId)) {
+        if (!userServiceClient.existsById(userId)) {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
         return repository.findByRequesterId(userId).stream()
@@ -198,19 +198,19 @@ public class RequestService {
     }
 
     private EventFullDto getEventOrThrow(Long eventId) {
-        try {
-            return eventService.getEventById(eventId);
-        } catch (FeignException.NotFound e) {
+        EventFullDto event = eventServiceClient.getEventById(eventId);
+        if (event == null) {
             throw new NotFoundException("Мероприятие с id=" + eventId + " не найдено");
         }
+        return event;
     }
 
     private UserDto getUserOrThrow(Long userId) {
-        try {
-            return userService.getUserById(userId);
-        } catch (FeignException.NotFound e) {
+        UserDto user = userServiceClient.getUserById(userId);
+        if (user == null) {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
+        return user;
     }
 
     private EventFullDto getPublishedEventOrThrow(Long eventId) {

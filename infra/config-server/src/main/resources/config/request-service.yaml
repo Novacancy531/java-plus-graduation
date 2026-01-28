@@ -29,6 +29,31 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      userService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      eventService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      userService:
+        maxAttempts: 3
+        waitDuration: 200ms
+      eventService:
+        maxAttempts: 3
+        waitDuration: 200ms
+
+
 management:
   endpoints:
     web:

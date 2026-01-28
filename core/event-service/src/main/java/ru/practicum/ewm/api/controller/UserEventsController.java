@@ -44,14 +44,14 @@ public class UserEventsController {
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto create(
             @Positive @PathVariable Long userId,
-            @RequestBody EventNewDto dto) throws ConditionsException {
+            @RequestBody EventNewDto dto) {
         return service.create(dto, userId);
     }
 
     @GetMapping("/{eventId}")
     public EventFullDto findByUserIdAndEventId(
             @Positive @PathVariable Long userId,
-            @Positive @PathVariable Long eventId) throws ConditionsException {
+            @Positive @PathVariable Long eventId) {
         return service.findByUserIdAndEventId(userId, eventId);
     }
 
@@ -59,7 +59,7 @@ public class UserEventsController {
     public EventFullDto update(
             @Positive @PathVariable Long userId,
             @Positive @PathVariable Long eventId,
-            @RequestBody EventUpdateDto dto) throws ConditionsException, ConflictException {
+            @RequestBody EventUpdateDto dto) {
         return service.update(userId, eventId, dto);
     }
 

@@ -4,8 +4,8 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.client.EventControllerEvent;
-import ru.practicum.client.UserControllerClient;
+import ru.practicum.client.EventServiceFacade;
+import ru.practicum.client.UserServiceFacade;
 import ru.practicum.dal.entity.Comment;
 import ru.practicum.dal.repository.CommentRepository;
 import ru.practicum.dto.comment.CommentDto;
@@ -24,8 +24,8 @@ import java.util.List;
 @Slf4j
 public class CommentService {
     private final CommentRepository commentRepository;
-    private final UserControllerClient userService;
-    private final EventControllerEvent eventService;
+    private final UserServiceFacade userServiceClient;
+    private final EventServiceFacade eventServiceClient;
     private final CommentMapper commentMapper;
 
     @Transactional(readOnly = true)
@@ -89,10 +89,18 @@ public class CommentService {
     }
 
     private UserDto getUserOrThrow(Long userId) {
-        return userService.getUserById(userId);
+        UserDto user = userServiceClient.getUserById(userId);
+        if (user == null) {
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден.");
+        }
+        return user;
     }
 
     private EventFullDto getEventOrThrow(Long eventId) {
-        return eventService.getEventById(eventId);
+        EventFullDto event = eventServiceClient.getEventById(eventId);
+        if (event == null) {
+            throw new NotFoundException("Событие с id=" + eventId + " не найдено.");
+        }
+        return event;
     }
 }

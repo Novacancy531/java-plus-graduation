@@ -11,16 +11,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
-import ru.practicum.api.RequestControllerApi;
 import ru.practicum.constant.EventState;
 import ru.practicum.constant.EventStateAction;
-import ru.practicum.constant.RequestStatus;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventNewDto;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.dto.event.EventUpdateDto;
 import ru.practicum.dto.user.UserDto;
-import ru.practicum.ewm.client.UserControllerClient;
+import ru.practicum.ewm.client.RequestServiceFacade;
+import ru.practicum.ewm.client.StatsServiceFacade;
+import ru.practicum.ewm.client.UserServiceFacade;
 import ru.practicum.exception.ConditionsException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
@@ -33,7 +33,6 @@ import ru.practicum.ewm.dal.repository.CategoryRepository;
 import ru.practicum.ewm.dal.repository.EventRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -50,11 +49,11 @@ public class EventService {
     private final EventMapper mapper;
 
 
-    private final UserControllerClient userServiceClient;
-    private final RequestControllerApi requestServiceClient;
+    private final UserServiceFacade userServiceClient;
+    private final RequestServiceFacade requestServiceClient;
+    private final StatsServiceFacade statsServiceClient;
     private final LocationService locationService;
     private final CategoryRepository categoryRepository;
-    private final StatsService statsService;
 
     @Transactional
     public EventFullDto create(@Valid EventNewDto dto, Long userId) throws ConditionsException {
@@ -71,7 +70,7 @@ public class EventService {
     }
 
     @Transactional
-    public EventFullDto update(Long userId, Long eventId, @Valid EventUpdateDto dto) throws ConditionsException, ConflictException {
+    public EventFullDto update(Long userId, Long eventId, @Valid EventUpdateDto dto) {
         if (!userIsExist(userId)) {
             throw new NotFoundException("Пользователь не найден");
         }
@@ -95,16 +94,16 @@ public class EventService {
         log.info("Обновлено событие с id = {}", eventId);
 
         Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsService.getViewsForEvent(eventId);
+        Long calcView = statsServiceClient.getViewsForEvent(eventId);
 
         return mapper.toDto(event).toBuilder()
                 .confirmedRequests(calcConfirmedRequests)
                 .views(calcView)
-                 .build();
+                .build();
     }
 
     @Transactional
-    public EventFullDto updateAdmin(Long eventId, @Valid EventUpdateDto dto) throws ConditionsException, ConflictException {
+    public EventFullDto updateAdmin(Long eventId, @Valid EventUpdateDto dto) {
         Event event = getEventOrThrow(eventId);
 
         EventState currentState = event.getState();
@@ -144,7 +143,7 @@ public class EventService {
         log.info("Администратор обновил событие с id = {}", eventId);
 
         Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsService.getViewsForEvent(eventId);
+        Long calcView = statsServiceClient.getViewsForEvent(eventId);
         return mapper.toDto(event).toBuilder()
                 .confirmedRequests(calcConfirmedRequests)
                 .views(calcView)
@@ -153,14 +152,14 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public EventFullDto findByUserIdAndEventId(Long userId, Long eventId) throws ConditionsException {
+    public EventFullDto findByUserIdAndEventId(Long userId, Long eventId) {
         if (!userIsExist(userId)) {
             throw new NotFoundException("Пользователь не найден");
         }
         Event event = getEventOrThrow(eventId, userId);
 
         Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsService.getViewsForEvent(eventId);
+        Long calcView = statsServiceClient.getViewsForEvent(eventId);
         log.info("Получено событие {} пользователя {}", eventId, userId);
         return mapper.toDto(event).toBuilder()
                 .confirmedRequests(calcConfirmedRequests)
@@ -173,9 +172,9 @@ public class EventService {
     public EventFullDto findPublicEventById(Long eventId, String clientIp, String requestUri) {
         Event event = getEventOrThrow(eventId, EventState.PUBLISHED);
         Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsService.getViewsForEvent(eventId);
+        Long calcView = statsServiceClient.getViewsForEvent(eventId);
 
-        statsService.saveHit(
+        statsServiceClient.saveHit(
                 "main-service",
                 requestUri,
                 clientIp,
@@ -193,7 +192,7 @@ public class EventService {
     public EventFullDto getEvent(Long eventId) {
         Event event = getEventOrThrow(eventId);
         Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsService.getViewsForEvent(eventId);
+        Long calcView = statsServiceClient.getViewsForEvent(eventId);
 
         log.info("Получено событие {}", eventId);
         return mapper.toDto(event).toBuilder()
@@ -203,7 +202,7 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventShortDto> findByUserId(Long userId, Pageable pageable) throws ConditionsException {
+    public List<EventShortDto> findByUserId(Long userId, Pageable pageable) {
         if (!userIsExist(userId)) {
             throw new NotFoundException("Пользователь не найден");
         }
@@ -213,7 +212,7 @@ public class EventService {
                 .map(event -> EventMapperDep.eventToShortDto(
                         event,
                         getConfirmedRequests(event.getId()),
-                        statsService.getViewsForEvent(event.getId())
+                        statsServiceClient.getViewsForEvent(event.getId())
                 ))
                 .toList();
     }
@@ -221,7 +220,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public List<EventShortDto> findPublicEventsWithFilter(@Valid EventsFilter filter, int from, int size,
                                                           String clientIp, String requestUri) {
-        statsService.saveHit(
+        statsServiceClient.saveHit(
                 "main-service",
                 requestUri,
                 clientIp,
@@ -283,7 +282,7 @@ public class EventService {
                 .map(e -> "/events/" + e.getId())
                 .toList();
 
-        Map<String, Long> viewsUriMap = statsService.getViewsForUris(uris);
+        Map<String, Long> viewsUriMap = statsServiceClient.getViewsForUris(uris);
         Stream<Event> eventStream = eventsPage.stream();
         List<T> result = eventStream
                 .map(e -> mapper.apply(e, viewsUriMap))
@@ -293,11 +292,15 @@ public class EventService {
         return result;
     }
 
-    private UserDto getUserOrThrow(Long userId) throws ConditionsException {
-        return userServiceClient.find(new ArrayList<>(List.of(userId)),0, 10).getFirst();
+    private UserDto getUserOrThrow(Long userId) {
+        UserDto user = userServiceClient.getUserById(userId);
+        if (user == null) {
+            throw new NotFoundException("Пользователь не найден");
+        }
+        return user;
     }
 
-    private Category getCategoryOrThrow(Long catId) throws ConditionsException {
+    private Category getCategoryOrThrow(Long catId) {
         return categoryRepository.findById(catId)
                 .orElseThrow(() -> new ConditionsException("Категория с id=" + catId + " не найдена"));
     }
@@ -307,7 +310,7 @@ public class EventService {
                 .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
     }
 
-    private Event getEventOrThrow(Long eventId, Long userId) throws ConditionsException {
+    private Event getEventOrThrow(Long eventId, Long userId) {
         var event = getEventOrThrow(eventId);
         if (!event.getInitiator().equals(userId)) {
             throw new ConditionsException("Пользователь не является инициатором события");
@@ -324,7 +327,7 @@ public class EventService {
     }
 
     private Long getConfirmedRequests(Long eventId) {
-        return requestServiceClient.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
+        return requestServiceClient.countConfirmed(eventId);
     }
 
     @Transactional(readOnly = true)
@@ -332,7 +335,8 @@ public class EventService {
         return userServiceClient.existsById(userId);
     }
 
-    private void validateEventDate(LocalDateTime newDate, EventStateAction action, EventState currentState, Event event) throws ConditionsException {
+    private void validateEventDate(LocalDateTime newDate, EventStateAction action, EventState currentState,
+                                   Event event)  {
         if (action == EventStateAction.PUBLISH_EVENT) {
             if (newDate.isBefore(LocalDateTime.now().plusHours(1))) {
                 throw new ConditionsException("Дата начала должна быть не ранее чем через 1 час при публикации");
