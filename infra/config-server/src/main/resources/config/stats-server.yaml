@@ -27,9 +27,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/stats_db
-    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:postgres}}
-    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD:postgres}}
+    url: jdbc:postgresql://localhost:5436/stats
+    username: test
+    password: test
   jpa:
     hibernate:
       ddl-auto: none
