@@ -1,5 +1,6 @@
 package ru.practicum.api;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.event.EventFullDto;
@@ -14,7 +15,7 @@ public interface EventControllerApi {
 
     @GetMapping(PATH)
     List<EventShortDto> find(
-            EventsFilter filter,
+            @Valid EventsFilter filter,
             @RequestParam(defaultValue = "0") int from,
             @RequestParam(defaultValue = "10") int size,
             @RequestHeader(value = "X-Client-Ip", required = false) String clientIp,

@@ -12,12 +12,12 @@ import ru.practicum.dto.event.EventFullDto;
 @RequiredArgsConstructor
 public class EventServiceFacade {
 
-    private final EventControllerEvent eventService;
+    private final EventControllerClient eventClient;
 
     @CircuitBreaker(name = "eventService", fallbackMethod = "getEventFallback")
     @Retry(name = "eventService")
     public EventFullDto getEventById(Long eventId) {
-        return eventService.getEventById(eventId);
+        return eventClient.getEventById(eventId);
     }
 
     private EventFullDto getEventFallback(Long eventId, Throwable ex) {

@@ -1,10 +1,10 @@
 package ru.practicum.domain.service;
 
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import ru.practicum.client.EventServiceFacade;
 import ru.practicum.client.UserServiceFacade;
 import ru.practicum.constant.EventState;
@@ -36,13 +36,11 @@ public class RequestService {
     private final EventServiceFacade eventServiceClient;
     private final RequestRepository repository;
     private final RequestMapper mapper;
+    private final TransactionTemplate transactionTemplate;
 
 
-    @Transactional
+
     public ParticipationRequestDto create(Long userId, Long eventId) {
-        if (repository.findByEventIdAndRequesterId(eventId, userId).isPresent()) {
-            throw new ConflictException("Запрос уже существует");
-        }
 
         var requester = getUserOrThrow(userId);
         var event = getPublishedEventOrThrow(eventId);
@@ -52,20 +50,29 @@ public class RequestService {
         }
 
         var limit = event.getParticipantLimit();
-        if (limit != null && limit > 0) {
-            long confirmedCount = repository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-            if (confirmedCount >= limit) {
-                throw new ConflictException("Достигнут лимит участников");
+        var isConfirmed = !event.getRequestModeration() || (limit != null && limit == 0L);
+
+        var saved = transactionTemplate.execute(status -> {
+
+            if (repository.findByEventIdAndRequesterId(eventId, userId).isPresent()) {
+                throw new ConflictException("Запрос уже существует");
             }
-        }
 
-        var isConfirmed = !event.getRequestModeration() || limit == 0L;
-        var request = Request.newRequest(eventId, requester.getId(), isConfirmed);
+            if (limit != null && limit > 0) {
+                long confirmedCount = repository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
+                if (confirmedCount >= limit) {
+                    throw new ConflictException("Достигнут лимит участников");
+                }
+            }
 
-        var saved = repository.save(request);
+            var request = Request.newRequest(eventId, requester.getId(), isConfirmed);
+            return repository.save(request);
+        });
+
         log.info("Создан запрос, id = {}", saved.getId());
         return mapper.toDto(saved);
     }
+
 
 
     @Transactional(readOnly = true)

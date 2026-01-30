@@ -12,12 +12,12 @@ import ru.practicum.dto.user.UserDto;
 @RequiredArgsConstructor
 public class UserServiceFacade {
 
-    private final UserControllerClient userService;
+    private final UserControllerClient userClient;
 
     @CircuitBreaker(name = "userService", fallbackMethod = "getUserFallback")
     @Retry(name = "userService")
     public UserDto getUserById(Long userId) {
-        return userService.getUserById(userId);
+        return userClient.getUserById(userId);
     }
 
     private UserDto getUserFallback(Long userId, Throwable ex) {

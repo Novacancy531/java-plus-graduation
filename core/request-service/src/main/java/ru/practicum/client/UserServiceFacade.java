@@ -13,12 +13,12 @@ import ru.practicum.dto.user.UserDto;
 @Slf4j
 public class UserServiceFacade {
 
-    private final UserControllerApi userService;
+    private final UserControllerApi userClient;
 
     @CircuitBreaker(name = "userService", fallbackMethod = "existsFallback")
     @Retry(name = "userService")
     public boolean existsById(Long userId) {
-        return userService.existsById(userId);
+        return userClient.existsById(userId);
     }
 
     private boolean existsFallback(Long userId, Throwable ex) {
@@ -29,7 +29,7 @@ public class UserServiceFacade {
     @CircuitBreaker(name = "userService", fallbackMethod = "getFallback")
     @Retry(name = "userService")
     public UserDto getUserById(Long userId) {
-        return userService.getUserById(userId);
+        return userClient.getUserById(userId);
     }
 
     private UserDto getFallback(Long userId, Throwable ex) {

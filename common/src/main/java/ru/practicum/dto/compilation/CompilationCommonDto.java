@@ -7,8 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import ru.practicum.interfaceValidation.CreateValidation;
-import ru.practicum.interfaceValidation.UpdateValidation;
+import ru.practicum.validation.CreateValidation;
+import ru.practicum.validation.UpdateValidation;
 
 @Data
 @SuperBuilder

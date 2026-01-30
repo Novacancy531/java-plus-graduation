@@ -13,12 +13,12 @@ import ru.practicum.dto.event.EventFullDto;
 @Slf4j
 public class EventServiceFacade {
 
-    private final EventControllerApi eventService;
+    private final EventControllerApi eventClient;
 
     @CircuitBreaker(name = "eventService", fallbackMethod = "getFallback")
     @Retry(name = "eventService")
     public EventFullDto getEventById(Long eventId) {
-        return eventService.getEventById(eventId);
+        return eventClient.getEventById(eventId);
     }
 
     private EventFullDto getFallback(Long eventId, Throwable ex) {
