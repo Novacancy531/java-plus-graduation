@@ -9,6 +9,7 @@ import ru.practicum.config.JacksonConfig;
 @SpringBootApplication
 @EnableFeignClients
 @Import(JacksonConfig.class)
+
 public class RequestServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(RequestServiceApplication.class, args);

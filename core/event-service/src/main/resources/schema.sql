@@ -48,3 +48,10 @@ CREATE TABLE IF NOT EXISTS compilation_events
     CONSTRAINT fk_compilations FOREIGN KEY (compilation_id) REFERENCES compilations (id) ON DELETE CASCADE,
     CONSTRAINT fk_events FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS event_views (
+                             id BIGSERIAL PRIMARY KEY,
+                             user_id BIGINT NOT NULL,
+                             event_id BIGINT NOT NULL,
+                             UNIQUE (user_id, event_id)
+);

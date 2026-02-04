@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: aggregator
+
+kafka:
+  bootstrap-servers: localhost:9092
+  consumer-group: stats-aggregator
+  auto-offset-reset: earliest
+  user-actions-topic: stats.user-actions.v1
+  similarity-topic: stats.events-similarity.v1

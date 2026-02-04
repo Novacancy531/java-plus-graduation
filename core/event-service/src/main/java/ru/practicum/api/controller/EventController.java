@@ -19,17 +19,22 @@ public class EventController implements EventControllerApi {
     private final EventService service;
 
     @Override
-    public List<EventShortDto> find(EventsFilter filter, int from, int size, String clientIp, String requestUri) {
-        return service.findPublicEventsWithFilter(filter, from, size, clientIp, requestUri);
+    public List<EventShortDto> find(EventsFilter filter, int from, int size) {
+        return service.findPublicEventsWithFilter(filter, from, size);
     }
 
     @Override
-    public EventFullDto findById(Long id, String clientIp, String requestUri) {
-        return service.findPublicEventById(id, clientIp, requestUri);
+    public EventFullDto getEvent(Long id, Long userId) {
+        return service.findPublicEventById(id, userId);
     }
 
     @Override
     public EventFullDto getEventById(Long id) {
         return service.getEvent(id);
+    }
+
+    @Override
+    public List<EventShortDto> recommendations(Long userId, int maxResults) {
+        return service.getRecommendations(userId, maxResults);
     }
 }

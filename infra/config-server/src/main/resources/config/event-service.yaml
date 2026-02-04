@@ -57,13 +57,6 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
 
-      statsService:
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 20
-        minimumNumberOfCalls: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-
   retry:
     instances:
       requestService:
@@ -85,3 +78,12 @@ logging:
     org.springframework.boot.context.properties: TRACE
     org.springframework.cloud.netflix.eureka: DEBUG
     com.netflix.appinfo: DEBUG
+
+grpc:
+  client:
+    collector:
+      address: discovery:///collector
+      negotiationType: plaintext
+    analyzer:
+      address: discovery:///analyzer
+      negotiationType: plaintext

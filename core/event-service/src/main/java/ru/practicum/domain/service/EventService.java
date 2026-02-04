@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.analyzer.AnalyzerClient;
+import ru.practicum.collector.CollectorClient;
 import ru.practicum.constant.EventState;
 import ru.practicum.constant.EventStateAction;
 import ru.practicum.dto.event.EventFullDto;
@@ -17,7 +19,6 @@ import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.dto.event.EventUpdateDto;
 import ru.practicum.dto.user.UserDto;
 import ru.practicum.client.RequestServiceFacade;
-import ru.practicum.client.StatsServiceFacade;
 import ru.practicum.client.UserServiceFacade;
 import ru.practicum.exception.ConditionsException;
 import ru.practicum.exception.ConflictException;
@@ -29,15 +30,15 @@ import ru.practicum.dal.entity.Category;
 import ru.practicum.dal.entity.Event;
 import ru.practicum.dal.repository.CategoryRepository;
 import ru.practicum.dal.repository.EventRepository;
+import ru.practicum.stats.proto.RecommendedEventProto;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
-import static ru.practicum.constant.EventStateAction.*;
+import static ru.practicum.constant.EventStateAction.REJECT_EVENT;
 
 @Slf4j
 @Service
@@ -47,12 +48,13 @@ public class EventService {
     private final EventRepository repository;
     private final EventMapper mapper;
 
-
     private final UserServiceFacade userServiceClient;
     private final RequestServiceFacade requestServiceClient;
-    private final StatsServiceFacade statsServiceClient;
     private final LocationService locationService;
     private final CategoryRepository categoryRepository;
+
+    private final CollectorClient collectorClient;
+    private final AnalyzerClient analyzerClient;
 
     @Transactional
     public EventFullDto create(EventNewDto dto, Long userId) {
@@ -86,18 +88,15 @@ public class EventService {
         event = repository.save(event);
         log.info("Обновлено событие с id = {}", eventId);
 
-        Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsServiceClient.getViewsForEvent(eventId);
+        var confirmed = getConfirmedRequests(eventId);
+        var rating = getRating(eventId);
 
-        return mapper.toDto(event).toBuilder()
-                .confirmedRequests(calcConfirmedRequests)
-                .views(calcView)
-                .build();
+        return mapToEventFullDto(event, confirmed, rating);
     }
 
     @Transactional
     public EventFullDto updateAdmin(Long eventId, EventUpdateDto dto) {
-        Event event = getEventOrThrow(eventId);
+        var event = getEventOrThrow(eventId);
 
         EventState currentState = event.getState();
         EventStateAction action = dto.getStateAction();
@@ -128,13 +127,10 @@ public class EventService {
         event = repository.save(event);
         log.info("Администратор обновил событие с id = {}", eventId);
 
-        Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsServiceClient.getViewsForEvent(eventId);
-        return mapper.toDto(event).toBuilder()
-                .confirmedRequests(calcConfirmedRequests)
-                .views(calcView)
-                .build();
+        var confirmed = getConfirmedRequests(eventId);
+        var rating = getRating(eventId);
 
+        return mapToEventFullDto(event, confirmed, rating);
     }
 
     @Transactional(readOnly = true)
@@ -142,49 +138,37 @@ public class EventService {
         if (!userIsExist(userId)) {
             throw new NotFoundException("Пользователь не найден");
         }
-        Event event = getEventOrThrow(eventId, userId);
+        var event = getEventOrThrow(eventId, userId);
 
-        Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsServiceClient.getViewsForEvent(eventId);
         log.info("Получено событие {} пользователя {}", eventId, userId);
-        return mapper.toDto(event).toBuilder()
-                .confirmedRequests(calcConfirmedRequests)
-                .views(calcView)
-                .build();
 
+        var confirmed = getConfirmedRequests(eventId);
+        var rating = getRating(eventId);
+
+        return mapToEventFullDto(event, confirmed, rating);
     }
 
     @Transactional(readOnly = true)
-    public EventFullDto findPublicEventById(Long eventId, String clientIp, String requestUri) {
-        Event event = getEventOrThrow(eventId, EventState.PUBLISHED);
-        Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsServiceClient.getViewsForEvent(eventId);
+    public EventFullDto findPublicEventById(Long eventId, Long userId) {
+        var event = getEventOrThrow(eventId, EventState.PUBLISHED);
+        var confirmed = getConfirmedRequests(eventId);
 
-        statsServiceClient.saveHit(
-                "main-service",
-                requestUri,
-                clientIp,
-                LocalDateTime.now()
-        );
+        collectorClient.view(userId, eventId);
+
+        var rating = getRating(eventId);
 
         log.info("Получено публичное событие {}", eventId);
-        return mapper.toDto(event).toBuilder()
-                .confirmedRequests(calcConfirmedRequests)
-                .views(calcView)
-                .build();
+        return mapToEventFullDto(event, confirmed, rating);
     }
 
     @Transactional(readOnly = true)
     public EventFullDto getEvent(Long eventId) {
-        Event event = getEventOrThrow(eventId);
-        Long calcConfirmedRequests = getConfirmedRequests(eventId);
-        Long calcView = statsServiceClient.getViewsForEvent(eventId);
+        var event = getEventOrThrow(eventId);
+        var confirmed = getConfirmedRequests(eventId);
+        var rating = getRating(eventId);
 
         log.info("Получено событие {}", eventId);
-        return mapper.toDto(event).toBuilder()
-                .confirmedRequests(calcConfirmedRequests)
-                .views(calcView)
-                .build();
+        return mapToEventFullDto(event, confirmed, rating);
     }
 
     @Transactional(readOnly = true)
@@ -193,26 +177,21 @@ public class EventService {
             throw new NotFoundException("Пользователь не найден");
         }
 
-        return repository.findAllByinitiator(userId, pageable)
-                .stream()
+        var events = repository.findAllByinitiator(userId, pageable);
+        var eventIds = events.stream().map(Event::getId).toList();
+        Map<Long, Double> ratings = getRatings(eventIds);
+
+        return events.stream()
                 .map(event -> EventMapperDep.eventToShortDto(
                         event,
                         getConfirmedRequests(event.getId()),
-                        statsServiceClient.getViewsForEvent(event.getId())
+                        ratings.getOrDefault(event.getId(), 0.0)
                 ))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<EventShortDto> findPublicEventsWithFilter(EventsFilter filter, int from, int size,
-                                                          String clientIp, String requestUri) {
-        statsServiceClient.saveHit(
-                "main-service",
-                requestUri,
-                clientIp,
-                LocalDateTime.now()
-        );
-
+    public List<EventShortDto> findPublicEventsWithFilter(EventsFilter filter, int from, int size) {
         int page = from / size;
         Pageable pageable = PageRequest.of(page, size);
 
@@ -220,11 +199,11 @@ public class EventService {
                 filter,
                 pageable,
                 false,
-                (event, viewsMap) -> {
-                    String uri = "/events/" + event.getId();
-                    Long views = viewsMap.getOrDefault(uri, 0L);
-                    return EventMapperDep.eventToShortDto(event, getConfirmedRequests(event.getId()), views);
-                }
+                (event, ratings) -> EventMapperDep.eventToShortDto(
+                        event,
+                        getConfirmedRequests(event.getId()),
+                        ratings.getOrDefault(event.getId(), 0.0)
+                )
         );
     }
 
@@ -234,12 +213,45 @@ public class EventService {
                 filter,
                 pageable,
                 true,
-                (event, viewsMap) -> {
-                    String uri = "/events/" + event.getId();
-                    Long views = viewsMap.getOrDefault(uri, 0L);
-                    return EventMapperDep.eventToFullDto(event, getConfirmedRequests(event.getId()), views);
-                }
+                (event, ratings) -> EventMapperDep.eventToFullDto(
+                        event,
+                        getConfirmedRequests(event.getId()),
+                        ratings.getOrDefault(event.getId(), 0.0)
+                )
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<EventShortDto> getRecommendations(Long userId, int maxResults) {
+        var recs = analyzerClient.getRecommendationsForUser(userId, maxResults).toList();
+        if (recs.isEmpty()) {
+            return List.of();
+        }
+
+        var ids = recs.stream().map(RecommendedEventProto::getEventId).toList();
+        var events = repository.findAllById(ids);
+
+        Map<Long, Double> ratings = recs.stream()
+                .collect(Collectors.toMap(
+                        RecommendedEventProto::getEventId,
+                        RecommendedEventProto::getScore,
+                        (a, b) -> a
+                ));
+
+        return events.stream()
+                .map(e -> EventMapperDep.eventToShortDto(
+                        e,
+                        getConfirmedRequests(e.getId()),
+                        ratings.getOrDefault(e.getId(), 0.0)
+                ))
+                .toList();
+    }
+
+    private EventFullDto mapToEventFullDto(Event event, Long confirmed, double rating) {
+        return mapper.toDto(event).toBuilder()
+                .confirmedRequests(confirmed)
+                .rating(rating)
+                .build();
     }
 
     private EventState mapActionToState(EventStateAction action, boolean isAdmin) {
@@ -266,8 +278,8 @@ public class EventService {
             EventsFilter filter,
             Pageable pageable,
             Boolean forAdmin,
-            BiFunction<Event, Map<String, Long>, T> mapper) {
-
+            java.util.function.BiFunction<Event, Map<Long, Double>, T> mapperFn
+    ) {
         BooleanBuilder predicate = EventPredicateBuilder.buildPredicate(filter, forAdmin);
 
         if (!forAdmin) {
@@ -275,23 +287,21 @@ public class EventService {
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
                     Sort.by(Sort.Direction.DESC, "eventDate")
-
             );
         }
+
         Page<Event> eventsPage = repository.findAll(predicate, pageable);
 
         if (eventsPage.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<String> uris = eventsPage.stream()
-                .map(e -> "/events/" + e.getId())
-                .toList();
+        List<Event> events = eventsPage.getContent();
+        List<Long> eventIds = events.stream().map(Event::getId).toList();
+        Map<Long, Double> ratings = getRatings(eventIds);
 
-        Map<String, Long> viewsUriMap = statsServiceClient.getViewsForUris(uris);
-        Stream<Event> eventStream = eventsPage.stream();
-        List<T> result = eventStream
-                .map(e -> mapper.apply(e, viewsUriMap))
+        List<T> result = events.stream()
+                .map(e -> mapperFn.apply(e, ratings))
                 .toList();
 
         log.info("Найдено {} событий в режиме {}", result.size(), forAdmin ? "ADMIN" : "PUBLIC");
@@ -341,8 +351,7 @@ public class EventService {
         return userServiceClient.existsById(userId);
     }
 
-    private void validateEventDate(LocalDateTime newDate, EventStateAction action, EventState currentState,
-                                   Event event) {
+    private void validateEventDate(LocalDateTime newDate, EventStateAction action, EventState currentState, Event event) {
         if (action == EventStateAction.PUBLISH_EVENT) {
             if (newDate.isBefore(LocalDateTime.now().plusHours(1))) {
                 throw new ConditionsException("Дата начала должна быть не ранее чем через 1 час при публикации");
@@ -352,5 +361,24 @@ public class EventService {
                 throw new ConditionsException("Дата начала должна быть не ранее чем через 1 час после публикации");
             }
         }
+    }
+
+    private double getRating(long eventId) {
+        return analyzerClient.getInteractionsCount(List.of(eventId))
+                .findFirst()
+                .map(RecommendedEventProto::getScore)
+                .orElse(0.0);
+    }
+
+    private Map<Long, Double> getRatings(List<Long> eventIds) {
+        if (eventIds == null || eventIds.isEmpty()) {
+            return Map.of();
+        }
+        return analyzerClient.getInteractionsCount(eventIds)
+                .collect(Collectors.toMap(
+                        RecommendedEventProto::getEventId,
+                        RecommendedEventProto::getScore,
+                        (a, b) -> a
+                ));
     }
 }
