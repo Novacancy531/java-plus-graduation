@@ -1,166 +1,346 @@
 ![pic](pic.png)
 
 # Explore With Me — Microservices Architecture
+
 ## Описание проекта
 
-**Explore With Me** — серверное приложение, реализующее платформу для публикации событий, подачи заявок на участие, комментирования и сбора статистики просмотров.
+**Explore With Me** — серверное микросервисное приложение для публикации событий, подачи заявок на участие, комментирования и формирования персональных рекомендаций мероприятий.
 
-Внешне API описано как единый сервис, однако фактически приложение реализовано в виде набора независимых микросервисов, каждый из которых отвечает за свою предметную область.
-Такой подход позволяет повысить масштабируемость, отказоустойчивость и упростить сопровождение проекта.
+Система предоставляет единый внешний REST API через gateway, при этом внутри состоит из набора независимых сервисов. Архитектура ориентирована на масштабируемость, отказоустойчивость и потоковую обработку пользовательских действий в реальном времени.
+
+Рекомендательная подсистема построена на Apache Kafka, gRPC и анализе пользовательских взаимодействий с мероприятиями.
+
+---
 
 ## Архитектура
 
 Проект построен по микросервисной архитектуре с использованием **Spring Boot** и **Spring Cloud**.
 
-### Состав сервисов
+В системе используются:
 
-#### Инфраструктурные сервисы
+- централизованная конфигурация
+- сервис обнаружения
+- gateway
+- потоковая обработка через Kafka
+- gRPC для межсервисного взаимодействия
+- рекомендательная платформа из отдельных сервисов
 
-- **config-server** — централизованное хранилище конфигураций
+---
 
-- **discovery-server** — сервис регистрации и обнаружения (Eureka)
+## Состав сервисов
 
-- **gateway-server** — единая точка входа в систему
+### Инфраструктурные сервисы
 
-#### Бизнес-сервисы
+- **config-server** — сервер централизованной конфигурации сервисов (Spring Cloud Config)
+- **discovery-server** — сервер обнаружения сервисов и сервис-реестр (Eureka)
+- **gateway-server** — API gateway, единая точка входа для внешних клиентов
+- **Apache Kafka** — брокер сообщений и потоковая шина событий
+
+---
+
+### Бизнес-сервисы
 
 - **event-service** — управление событиями, категориями и подборками
-
 - **user-service** — управление пользователями
-
 - **request-service** — заявки на участие в событиях
-
 - **comment-service** — комментарии к событиям
 
-- **stats-service** — сбор и агрегация статистики просмотров
+---
 
-#### Общие модули
+## Внешний API
 
-- **common** — общие DTO, контракты API, исключения
+Внешний контракт системы описан в OpenAPI-спецификациях:
 
-- **core** — parent-модуль и агрегация сервисов
+Основной API:  
+[ewm-main-service-spec.json](ewm-main-service-spec.json)
 
-- **infra** — инфраструктурные сервисы
+---
 
-### Взаимодействие сервисов
+### Платформа рекомендаций (stats-platform)
 
-Все межсервисные вызовы выполняются синхронно через Feign-клиенты
-и защищены механизмами отказоустойчивости.
+Подсистема рекомендаций реализована как набор отдельных микросервисов.
 
-#### Схема взаимодействия
+#### collector-service
 
-- **event-service**
-  - **→ user-service**
-  - **→ request-service**
-  - **→ stats-service**
-- **comment-service**
-  - **→ user-service**
-  - **→ event-service**
-- **request-service**
-  - **→ user-service**
-  - **→ event-service**
+Назначение — приём действий пользователей.
 
-### Надёжность
+Функции:
+- принимает действия пользователей по gRPC
+- регистрируется в discovery-server
+- получает конфигурацию из config-server
+- запускает gRPC сервер на случайном порту
+- преобразует сообщения в Avro
+- публикует события в Kafka
 
-- **Feign Client** — для межсервисных REST-вызовов
-- **Resilience4j** (**Circuit Breaker**) — защита от каскадных отказов
-- **Spring Retry** — повтор запросов при временных сбоях
-- При недоступности зависимого сервиса используется fallback-логика
+Kafka топик:
 
-### Внешний API
+stats.user-actions.v1
 
-Несмотря на микросервисную реализацию, внешний API соответствует единому контракту, описанному в OpenAPI-спецификациях:
+Типы действий:
+- VIEW — просмотр события
+- REGISTER — регистрация на событие
+- LIKE — лайк события
 
-- Основной API - [**ewm-main-service-spec.json**](ewm-main-service-spec.json)
-- API сервиса статистики - [**ewm-stats-service-spec.json**](ewm-stats-service-spec.json)
+---
 
-Доступ клиентов осуществляется через **gateway-server**.
+#### aggregator-service
+
+Назначение — расчёт сходства мероприятий.
+
+Функции:
+- читает поток действий пользователей из Kafka
+- рассчитывает косинусное сходство мероприятий на основе весов действий
+- выполняет инкрементальный пересчёт коэффициентов
+- поддерживает частные суммы S_min(A,B), S_A, S_B
+- упорядочивает пары событий по id для устранения дублей
+- публикует коэффициенты сходства в Kafka
+
+Kafka топик:
+
+stats.events-similarity.v1
+
+---
+
+#### analyzer-service
+
+Назначение — хранение метрик и генерация рекомендаций.
+
+Функции:
+- читает Kafka потоки действий и коэффициентов сходства
+- обновляет базу данных:
+    - историю взаимодействий пользователей
+    - коэффициенты сходства событий
+    - максимальные веса действий
+- предоставляет gRPC API рекомендаций
+- регистрируется в discovery-server
+- получает конфигурацию из config-server
+- запускает gRPC сервер на случайном порту
+
+Поддерживаемые сценарии:
+- рекомендации пользователю
+- похожие мероприятия
+- сумма взаимодействий по событиям
+
+---
+
+## Kafka топики
+
+Создаются автоматически при запуске Docker Compose:
+
+- stats.user-actions.v1
+- stats.events-similarity.v1
+
+Формат сообщений — **Avro**
+
+Namespace схем:
+
+ru.practicum.ewm.stats.avro
+
+---
+
+## gRPC API (внутреннее межсервисное взаимодействие)
+
+### Collector — UserActionController
+
+Метод:
+
+CollectUserAction(UserActionProto) → Empty
+
+Поля сообщения:
+- user_id
+- event_id
+- action_type
+- timestamp
+
+---
+
+### Analyzer — RecommendationsController
+
+Методы:
+
+GetRecommendationsForUser → stream RecommendedEventProto  
+GetSimilarEvents → stream RecommendedEventProto  
+GetInteractionsCount → stream RecommendedEventProto
+
+---
+
+## Взаимодействие сервисов
+
+### REST (Feign)
+
+- event-service → user-service
+- event-service → request-service
+- comment-service → user-service
+- comment-service → event-service
+- request-service → user-service
+- request-service → event-service
+
+---
+
+### gRPC
+
+- бизнес-сервисы → collector-service
+- бизнес-сервисы → analyzer-service
+
+---
+
+### Kafka
+
+- collector → Kafka
+- aggregator → Kafka
+- analyzer → база данных
+
+---
+
+## Надёжность
+
+- Feign Client
+- Resilience4j Circuit Breaker
+- Spring Retry
+- fallback-логика
+- идемпотентная обработка Kafka сообщений
+- инкрементальные пересчёты сходства
+
+---
 
 ## Технологический стек
 
-- **Java 21**
-- **Maven (multi-module)**
-- **Spring Boot 3.5.7**
-- **Spring Cloud 2025.0.0**
+- Java 21
+- Maven multi-module
+- Spring Boot 3.x
+- Spring Cloud
+- PostgreSQL
+- Apache Kafka
+- gRPC
+- Avro
+- JPA / Hibernate
+- QueryDSL
+- MapStruct
+- Lombok
+- Resilience4j
+- Spring Retry
+- Zalando Logbook
 
-### Основные зависимости микросервисов
-- **Spring Web**
-- **Spring Data JPA**
-- **Spring Validation**
-- **Spring Actuator**
-- **Spring Cloud OpenFeign**
-- **Spring Cloud Eureka Client**
-- **Spring Cloud Config Client**
-- **Spring Cloud LoadBalancer**
-- **Spring Retry**
-- **Resilience4j (Circuit Breaker)**
-- **PostgreSQL**
-- **MapStruct**
-- **Lombok**
-- **Zalando Logbook**
-
-### Работа с БД
-- **JPA / Hibernate**
-- **QueryDSL**
-
+---
 
 ## Тестирование
 
-Для проверки корректности работы системы используются Postman-коллекции, покрывающие как отдельные сервисы, так и их взаимодействие.
+Для проверки основных бизнес-сервисов используется Postman-коллекция, а для рекомендательной платформы — автоматический tester.jar.
 
-### Тесты сервиса статистики
+---
 
-**Postman Collection:** [**Explore With Me Plus - Stat - Microservices**](postman/ewm-stat-service.json)
+### Тесты основных сервисов (Main API)
 
-#### Проверяется:
+**Postman Collection:**  
+[ewm-main-service.json](tests/ewm-main-service.json)
 
-- POST /hit → сохранение информации о запросе
+Проверяются:
 
-- GET /stats → получение статистики
+- пользователи (/admin/users)
+- категории (/admin/categories)
+- события (public / private / admin API)
+- заявки на участие
+- бизнес-ограничения (409 Conflict)
+- валидация запросов (400 Bad Request)
+- корректность статусов и формата ответов
 
-- Корректность подсчёта hits
+---
 
-- Сортировка по убыванию просмотров
+### Тестирование рекомендательной платформы
 
-- Параметр unique=true
+Для проверки collector / aggregator / analyzer используется tester.jar (tests/tester.jar)
+Он генерирует пользовательские действия, отправляет их в систему и проверяет корректность обработки.
 
-- Обработка ошибок (400 при неверных датах)
+---
 
-#### Дополнительно:
+### Пример запуска
 
-- baseUrl stats-service определяется динамически через Eureka
+Тестируем только **collector** и сохраняем отчёт в файл:
 
-### Тесты основных сервисов
+java -jar tester.jar --tester.execution.mode=COLLECTION --tester.execution.output.file-path=./report.txt
 
-**Postman Collection:** [**Explore With Me Plus - Main - Microservices**](postman/ewm-main-service.json)
+---
 
-#### Проверяются:
+### Настройки генерации данных
 
-- Пользователи (/admin/users)
+Случайное количество уникальных пользователей:
 
-- Категории (/admin/categories)
+tester.generation.user-count: 5 - 15
 
-- События (private / public / admin API)
+Случайное количество мероприятий:
 
-- Заявки на участие
+tester.generation.event-count: 10 - 20
 
-- Бизнес-ограничения (409 Conflict)
+Верхний лимит общего числа действий:
 
-- Валидация запросов (400 Bad Request)
+tester.generation.actions-limit: 50 - 100
 
-- Корректность ответов и статусов
+---
+
+### Параметры временных меток
+
+Смещение первой метки назад от текущего времени (Duration формат):
+
+tester.generation.timestamp-settings.back: 3d
+
+Минимальный интервал между метками:
+
+tester.generation.timestamp-settings.increment-start: 1m
+
+Максимальный интервал между метками:
+
+tester.generation.timestamp-settings.increment-end: 10m
+
+---
+
+### Режимы выполнения
+
+- COLLECTION – только collector
+- AGGREGATION – collector + aggregator
+- ANALYZE – collector + aggregator + analyzer
+
+tester.execution.mode: ANALYZE
+
+Мгновенное логирование в консоль:
+
+tester.execution.immediate-logging.enabled: false
+
+---
+
+### Настройки вывода
+
+Печатать info-сообщения:
+
+tester.execution.output.info-enabled: true
+
+Печатать TRACE-сообщения:
+
+tester.execution.output.trace-enabled: true
+
+Выводить отчёт в консоль:
+
+tester.execution.output.print: true
+
+Сохранять отчёт в файл:
+
+tester.execution.output.file: true
+
+Путь к файлу отчёта:
+
+tester.execution.output.file-path: "./execution-report.txt"
+
+---
 
 ## Конфигурация и запуск
 
-- Конфигурации сервисов хранятся в **config-server**
-- Все сервисы регистрируются в **discovery-server**
-- Внешние запросы проходят через **gateway-server**
-- Базы данных — **PostgreSQL**, отдельная для каждого сервиса
+- конфигурации сервисов — config-server
+- обнаружение сервисов — discovery-server
+- внешний доступ — gateway-server
+- Kafka и топики — Docker Compose
+- отдельная PostgreSQL база для каждого сервиса
+
+---
 
 ## Итог
-В рамках проекта реализовано микросервисное приложение с единым внешним API и внутренним разделением на независимые сервисы по предметным областям.
-Реализация выполнена в виде набора микросервисов, взаимодействующих между собой по REST.
 
-Приложение предназначено для работы с событиями и предоставляет функциональность по управлению пользователями, публикации и поиску событий, подаче заявок на участие, комментированию, а также сбору и анализу статистики просмотров. Вся бизнес-логика распределена между сервисами в соответствии с их зоной ответственности, что обеспечивает слабую связанность компонентов и упрощает развитие системы.
-
-Архитектура приложения включает централизованную конфигурацию, сервис обнаружения, единый вход через gateway и устойчивые межсервисные взаимодействия с использованием **Feign**, **Circuit Breaker** и **Retry**. Это позволяет системе корректно обрабатывать запросы даже при частичной недоступности отдельных сервисов и делает решение готовым к масштабированию и дальнейшему сопровождению.
+Система представляет собой микросервисную платформу событий с потоковой обработкой пользовательских действий и рекомендательным движком. Используются Kafka, gRPC и алгоритмы сходства мероприятий, что обеспечивает высокую производительность, масштабируемость и расширяемость платформы.
