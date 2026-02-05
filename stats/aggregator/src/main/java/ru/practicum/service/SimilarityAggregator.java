@@ -77,7 +77,11 @@ public class SimilarityAggregator {
 
             Pair p = new Pair(eventA, eventB);
             double sm = state.getSMin(p);
-            double score = sm / (sA * sB);
+            double denom = Math.sqrt(sA) * Math.sqrt(sB);
+            if (denom == 0.0) {
+                continue;
+            }
+            double score = sm / denom;
 
             log.debug("similarity recalculated A={} B={} Smin={} score={}",
                     p.getFirst(), p.getSecond(), sm, score);

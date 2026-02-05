@@ -1,6 +1,7 @@
 package ru.practicum.service;
 
 import com.google.protobuf.Empty;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -20,14 +21,14 @@ import java.time.Instant;
 public class UserActionControllerImpl
         extends UserActionControllerGrpc.UserActionControllerImplBase {
 
-    private final KafkaProducer<String, byte[]> producer;
+    private final KafkaProducer<Long, byte[]> producer;
     private final String topic;
 
     private static final Logger log =
             LoggerFactory.getLogger(UserActionControllerImpl.class);
 
     public UserActionControllerImpl(
-            KafkaProducer<String, byte[]> producer,
+            KafkaProducer<Long, byte[]> producer,
             CollectorKafkaProperties props
     ) {
         this.producer = producer;
@@ -36,25 +37,35 @@ public class UserActionControllerImpl
 
     @Override
     public void collectUserAction(UserActionProto request, StreamObserver<Empty> responseObserver) {
-        log.info(">>> collectUserAction called: userId={}, eventId={}, actionType={}, ts={}",
+
+        log.info("Collector: received user-action userId={} eventId={} type={} ts={}",
                 request.getUserId(),
                 request.getEventId(),
                 request.getActionType(),
-                request.hasTimestamp() ? request.getTimestamp() : "NO_TS");
-
+                request.getTimestamp());
         UserActionAvro avro = map(request);
         byte[] bytes = AvroSerializer.serialize(avro);
 
         log.info("Send user action: key={}, topic={}", key(avro), topic);
 
-        producer.send(new ProducerRecord<>(topic, key(avro), bytes));
-
-        responseObserver.onNext(Empty.getDefaultInstance());
-        responseObserver.onCompleted();
+        try {
+            producer.send(new ProducerRecord<>(topic, key(avro), bytes));
+            log.info("Collector: sent user-action key={} topic={}", key(avro), topic);
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.error("Failed to send user action to Kafka", e);
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription("Failed to send user action")
+                            .withCause(e)
+                            .asRuntimeException()
+            );
+        }
     }
 
-    private static String key(UserActionAvro a) {
-        return a.getUserId() + ":" + a.getEventId();
+    private static long key(UserActionAvro a) {
+        return a.getUserId();
     }
 
     private static ActionTypeAvro mapType(ActionTypeProto t) {

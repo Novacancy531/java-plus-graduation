@@ -6,8 +6,11 @@ import org.springframework.data.repository.query.Param;
 import ru.practicum.model.EventSimilarity;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EventSimilarityRepository extends JpaRepository<EventSimilarity, Long> {
+
+    Optional<EventSimilarity> findByEventAAndEventB(Long eventA, Long eventB);
 
     @Query(value = """
         select es.event_b, es.score

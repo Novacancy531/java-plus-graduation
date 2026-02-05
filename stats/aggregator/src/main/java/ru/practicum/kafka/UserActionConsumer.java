@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
@@ -17,6 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 public class UserActionConsumer implements SmartLifecycle {
+
+    private static final Logger log = LoggerFactory.getLogger(UserActionConsumer.class);
 
     private final KafkaConsumer<String, byte[]> consumer;
     private final AggregatorKafkaProperties props;
@@ -54,6 +58,8 @@ public class UserActionConsumer implements SmartLifecycle {
                 }
 
                 for (ConsumerRecord<String, byte[]> r : records) {
+                    log.info("Aggregator: received user-action key={} topic={} offset={}",
+                            r.key(), r.topic(), r.offset());
                     UserActionAvro action = AvroDeserializer.deserialize(r.value(), new UserActionAvro());
                     aggregator.onAction(action);
                 }

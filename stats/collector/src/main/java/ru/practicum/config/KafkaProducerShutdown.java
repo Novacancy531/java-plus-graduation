@@ -5,9 +5,9 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 
 public class KafkaProducerShutdown {
 
-    private final KafkaProducer<String, byte[]> producer;
+    private final KafkaProducer<Long, byte[]> producer;
 
-    public KafkaProducerShutdown(KafkaProducer<String, byte[]> producer) {
+    public KafkaProducerShutdown(KafkaProducer<Long, byte[]> producer) {
         this.producer = producer;
     }
 

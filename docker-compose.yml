@@ -27,26 +27,25 @@ services:
       timeout: 5s
       retries: 20
 
-  kafka-init:
-    image: confluentinc/cp-kafka:7.6.1
+  kafka-init-topics:
+    image: confluentinc/confluent-local:latest
+    container_name: kafka-init-topics
     depends_on:
-      kafka:
-        condition: service_healthy
-    entrypoint: [ "/bin/sh", "-c" ]
-    command: >
-      echo 'Waiting for Kafka...';
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic stats.user-actions.v1 --partitions 3 --replication-factor 1;
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic stats.events-similarity.v1 --partitions 3 --replication-factor 1;
-      kafka-topics --bootstrap-server kafka:9092 --list;
-    restart: "no"
+      - kafka
+    command: "bash -c \
+                 'kafka-topics --create --topic stats.user-actions.v1 \
+                              --partitions 1 --replication-factor 1 --if-not-exists \
+                              --bootstrap-server kafka:29092 && \
+                 kafka-topics --create --topic stats.events-similarity.v1 \
+                              --partitions 1 --replication-factor 1 --if-not-exists \
+                              --bootstrap-server kafka:29092'"
+    init: true
 
   stats-db:
     image: postgres:16.1
     container_name: stats-db
     ports:
       - "5436:5432"
-    volumes:
-      - ./volumes/postgres/stats_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_DB=stats
       - POSTGRES_USER=test
@@ -66,8 +65,6 @@ services:
       - POSTGRES_DB=comment_db
       - POSTGRES_USER=ewm
       - POSTGRES_PASSWORD=ewm
-    volumes:
-      - ./volumes/postgres/comment_data:/var/lib/postgresql/data/
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -83,8 +80,6 @@ services:
       - POSTGRES_DB=event_db
       - POSTGRES_USER=ewm
       - POSTGRES_PASSWORD=ewm
-    volumes:
-      - ./volumes/postgres/event_data:/var/lib/postgresql/data/
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -100,8 +95,6 @@ services:
       - POSTGRES_DB=request_db
       - POSTGRES_USER=ewm
       - POSTGRES_PASSWORD=ewm
-    volumes:
-      - ./volumes/postgres/request_data:/var/lib/postgresql/data/
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -117,8 +110,6 @@ services:
       - POSTGRES_DB=user_db
       - POSTGRES_USER=ewm
       - POSTGRES_PASSWORD=ewm
-    volumes:
-      - ./volumes/postgres/user_data:/var/lib/postgresql/data/
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s

@@ -8,3 +8,9 @@ kafka:
   auto-offset-reset: earliest
   user-actions-topic: stats.user-actions.v1
   similarity-topic: stats.events-similarity.v1
+
+logging:
+  level:
+    ru.practicum.service.SimilarityAggregator: DEBUG
+    ru.practicum.kafka.UserActionConsumer: DEBUG
+    ru.practicum.kafka.EventSimilarityProducer: DEBUG
