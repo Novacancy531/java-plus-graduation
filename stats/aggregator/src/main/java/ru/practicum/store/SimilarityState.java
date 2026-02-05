@@ -1,28 +1,18 @@
 package ru.practicum.store;
 
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Getter
 @Component
 public class SimilarityState {
 
     private final Map<Long, Map<Long, Double>> maxWeights = new HashMap<>();
     private final Map<Long, Double> sEvent = new HashMap<>();
     private final Map<Long, Map<Long, Double>> sMin = new HashMap<>();
-
-    public Map<Long, Map<Long, Double>> getMaxWeights() {
-        return maxWeights;
-    }
-
-    public Map<Long, Double> getsEvent() {
-        return sEvent;
-    }
-
-    public Map<Long, Map<Long, Double>> getsMin() {
-        return sMin;
-    }
 
     public Map<Long, Double> getOrCreateUserWeights(long eventId) {
         return maxWeights.computeIfAbsent(eventId, k -> new HashMap<>());

@@ -13,7 +13,6 @@ public class EventViewService {
     private final EventViewRepository eventViewRepository;
     private final CollectorClient collectorClient;
 
-    @Transactional
     public void likeEvent(Long userId, Long eventId) {
         if (!eventViewRepository.existsByUserIdAndEventId(userId, eventId)) {
             throw new ConflictException("Можно лайкать только просмотренное событие");

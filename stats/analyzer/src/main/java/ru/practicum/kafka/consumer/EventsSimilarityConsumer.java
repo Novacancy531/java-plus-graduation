@@ -1,10 +1,10 @@
 package ru.practicum.kafka.consumer;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.practicum.kafka.mapper.SimilarityAvroMapper;
 import ru.practicum.model.EventSimilarity;
 import ru.practicum.repository.EventSimilarityRepository;
@@ -14,18 +14,12 @@ import ru.practicum.ewm.stats.avro.EventSimilarityAvro;
 import java.util.Optional;
 
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class EventsSimilarityConsumer {
-
-    private static final Logger log = LoggerFactory.getLogger(EventsSimilarityConsumer.class);
 
     private final EventSimilarityRepository repo;
     private final SimilarityAvroMapper mapper;
-
-    public EventsSimilarityConsumer(EventSimilarityRepository repo,
-                                    SimilarityAvroMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
-    }
 
     @KafkaListener(
             topics = "${kafka.topics.events-similarity}",

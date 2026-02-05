@@ -1,27 +1,21 @@
 package ru.practicum.kafka;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.stereotype.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.practicum.ewm.stats.avro.EventSimilarityAvro;
 import ru.practicum.service.AggregatorKafkaProperties;
 import ru.practicum.util.AvroSerializer;
 
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class EventSimilarityProducer {
-
-    private static final Logger log = LoggerFactory.getLogger(EventSimilarityProducer.class);
 
     private final KafkaProducer<String, byte[]> producer;
     private final AggregatorKafkaProperties props;
-
-    public EventSimilarityProducer(KafkaProducer<String, byte[]> producer,
-                                   AggregatorKafkaProperties props) {
-        this.producer = producer;
-        this.props = props;
-    }
 
     public void send(EventSimilarityAvro event) {
         byte[] payload = AvroSerializer.serialize(event);

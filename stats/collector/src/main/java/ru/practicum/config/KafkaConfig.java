@@ -13,19 +13,12 @@ import java.util.Properties;
 @Configuration
 public class KafkaConfig {
 
-    @Bean
+    @Bean(destroyMethod = "close")
     public KafkaProducer<Long, byte[]> kafkaProducer(CollectorKafkaProperties props) {
         Properties p = new Properties();
         p.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, props.getBootstrapServers());
         p.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
         p.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         return new KafkaProducer<>(p);
-    }
-
-    @Bean
-    public KafkaProducerShutdown kafkaProducerShutdown(
-            KafkaProducer<Long, byte[]> producer
-    ) {
-        return new KafkaProducerShutdown(producer);
     }
 }

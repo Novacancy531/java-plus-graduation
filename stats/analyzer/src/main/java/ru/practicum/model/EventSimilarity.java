@@ -1,9 +1,13 @@
 package ru.practicum.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
+@Getter
+@Setter
 @Entity
 @Table(
         name = "event_similarity",
@@ -26,40 +30,4 @@ public class EventSimilarity {
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
-
-    public Long getId() {
-        return id;
-    }
-
-    public Long getEventA() {
-        return eventA;
-    }
-
-    public void setEventA(Long eventA) {
-        this.eventA = eventA;
-    }
-
-    public Long getEventB() {
-        return eventB;
-    }
-
-    public void setEventB(Long eventB) {
-        this.eventB = eventB;
-    }
-
-    public double getScore() {
-        return score;
-    }
-
-    public void setScore(double score) {
-        this.score = score;
-    }
-
-    public OffsetDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(OffsetDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }

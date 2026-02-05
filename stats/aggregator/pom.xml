@@ -47,6 +47,12 @@
             <artifactId>avro-schemas</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>\
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

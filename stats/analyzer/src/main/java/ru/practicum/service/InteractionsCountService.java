@@ -1,8 +1,8 @@
 package ru.practicum.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.practicum.repository.UserEventInteractionRepository;
 
 import java.util.HashMap;
@@ -10,15 +10,11 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class InteractionsCountService {
 
-    private static final Logger log = LoggerFactory.getLogger(InteractionsCountService.class);
-
     private final UserEventInteractionRepository repo;
-
-    public InteractionsCountService(UserEventInteractionRepository repo) {
-        this.repo = repo;
-    }
 
     public Map<Long, Double> getCounts(List<Long> eventIds) {
         if (eventIds == null || eventIds.isEmpty()) {

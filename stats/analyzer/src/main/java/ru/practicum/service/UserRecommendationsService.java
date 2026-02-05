@@ -1,5 +1,6 @@
 package ru.practicum.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.repository.EventSimilarityRepository;
 import ru.practicum.repository.UserEventInteractionRepository;
@@ -9,16 +10,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserRecommendationsService {
 
     private final UserEventInteractionRepository interactionsRepo;
     private final EventSimilarityRepository similarityRepo;
-
-    public UserRecommendationsService(UserEventInteractionRepository interactionsRepo,
-                                      EventSimilarityRepository similarityRepo) {
-        this.interactionsRepo = interactionsRepo;
-        this.similarityRepo = similarityRepo;
-    }
 
     public List<Rec> recommend(long userId, int maxResults) {
         List<UserEventInteraction> recent = interactionsRepo.findTop50ByUserIdOrderByLastTsDesc(userId);

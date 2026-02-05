@@ -1,9 +1,13 @@
 package ru.practicum.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
+@Getter
+@Setter
 @Entity
 @Table(
         name = "user_event_interaction",
@@ -26,40 +30,4 @@ public class UserEventInteraction {
 
     @Column(name = "last_ts", nullable = false)
     private OffsetDateTime lastTs;
-
-    public Long getId() {
-        return id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Long getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(Long eventId) {
-        this.eventId = eventId;
-    }
-
-    public double getWeight() {
-        return weight;
-    }
-
-    public void setWeight(double weight) {
-        this.weight = weight;
-    }
-
-    public OffsetDateTime getLastTs() {
-        return lastTs;
-    }
-
-    public void setLastTs(OffsetDateTime lastTs) {
-        this.lastTs = lastTs;
-    }
 }

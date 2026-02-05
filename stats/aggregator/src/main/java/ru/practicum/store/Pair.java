@@ -1,5 +1,8 @@
 package ru.practicum.store;
 
+import lombok.Getter;
+
+@Getter
 public final class Pair {
 
     private final long first;
@@ -8,13 +11,5 @@ public final class Pair {
     public Pair(long a, long b) {
         this.first = Math.min(a, b);
         this.second = Math.max(a, b);
-    }
-
-    public long getFirst() {
-        return first;
-    }
-
-    public long getSecond() {
-        return second;
     }
 }
