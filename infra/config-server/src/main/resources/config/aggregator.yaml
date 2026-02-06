@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: aggregator
+
+kafka:
+  bootstrap-servers: localhost:9092
+  consumer-group: stats-aggregator
+  auto-offset-reset: earliest
+  user-actions-topic: stats.user-actions.v1
+  similarity-topic: stats.events-similarity.v1
+  poll-timeout-ms: 500
+
+logging:
+  level:
+    ru.practicum.service.SimilarityAggregator: DEBUG
+    ru.practicum.kafka.UserActionConsumer: DEBUG
+    ru.practicum.kafka.EventSimilarityProducer: DEBUG

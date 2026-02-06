@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.practicum.client.EventServiceFacade;
 import ru.practicum.client.UserServiceFacade;
+import ru.practicum.collector.CollectorClient;
 import ru.practicum.constant.EventState;
 import ru.practicum.constant.RequestStatus;
 import ru.practicum.dal.entity.Request;
@@ -37,7 +38,7 @@ public class RequestService {
     private final RequestRepository repository;
     private final RequestMapper mapper;
     private final TransactionTemplate transactionTemplate;
-
+    private final CollectorClient collectorClient;
 
 
     public ParticipationRequestDto create(Long userId, Long eventId) {
@@ -68,6 +69,8 @@ public class RequestService {
             var request = Request.newRequest(eventId, requester.getId(), isConfirmed);
             return repository.save(request);
         });
+
+        collectorClient.register(userId, eventId);
 
         log.info("Создан запрос, id = {}", saved.getId());
         return mapper.toDto(saved);

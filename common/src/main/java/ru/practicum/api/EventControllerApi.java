@@ -17,18 +17,21 @@ public interface EventControllerApi {
     List<EventShortDto> find(
             @Valid EventsFilter filter,
             @RequestParam(defaultValue = "0") int from,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestHeader(value = "X-Client-Ip", required = false) String clientIp,
-            @RequestHeader(value = "X-Request-Uri", required = false) String requestUri
+            @RequestParam(defaultValue = "10") int size
     );
 
     @GetMapping(PATH + "/{id}")
-    EventFullDto findById(
+    EventFullDto getEvent(
             @PathVariable @Positive Long id,
-            @RequestHeader(value = "X-Client-Ip", required = false) String clientIp,
-            @RequestHeader(value = "X-Request-Uri", required = false) String requestUri
+            @RequestHeader("X-EWM-USER-ID") Long userId
     );
 
     @GetMapping(PATH + "/internal/{id}")
     EventFullDto getEventById(@PathVariable @Positive Long id);
+
+    @GetMapping(PATH + "/recommendations")
+     List<EventShortDto> recommendations(
+            @RequestHeader("X-EWM-USER-ID") Long userId,
+            @RequestParam(defaultValue = "10") int maxResults
+    );
 }

@@ -65,3 +65,9 @@ logging:
     org.springframework.boot.context.properties: TRACE
     org.springframework.cloud.netflix.eureka: DEBUG
     com.netflix.appinfo: DEBUG
+
+grpc:
+  client:
+    collector:
+      address: discovery:///collector
+      negotiationType: plaintext
